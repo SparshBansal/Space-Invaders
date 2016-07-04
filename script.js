@@ -7,11 +7,22 @@ var simpleLevelPlan = [
   "x                            x",
   "x                            x",
   "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
+  "x                            x",
   "x            @               x",
   "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
 ];
 
-/* TODO -- Create the basic models
+/* TODO
 -- Write the drawing mechanisms
 -- Define the interactions
 -- Handle collisions
@@ -86,10 +97,12 @@ var actorChars = {
 
 // Constructor for player
 function Player(position){
-  this.size = new Vector(0.8,1.5);
+  this.size = new Vector(1,1.5);
   this.pos = position.plus(new Vector(0 , -0.5));
   this.speed = new Vector(0,0);
 }
+
+Player.prototype.type = "player";
 
 // Constructor for Asteroid
 function Asteroid(position , type){
@@ -105,6 +118,7 @@ function Asteroid(position , type){
   }
   this.speed = new Vector(0, 3);
 }
+Asteroid.prototype.type = "asteroid";
 
 // Constructor for Bullets
 function Bullet(position){
@@ -112,3 +126,65 @@ function Bullet(position){
   this.pos = position.plus(0.3,0.3);
   this.speed = new Vector(0,-6);
 }
+
+Bullet.prototype.type = "bullet";
+
+// Create the drawing mechanism
+function elt(type,className){
+  var element = document.createElement(type);
+  if(className)
+    element.className = className;
+  return element;
+}
+
+function DOMDisplay(parent , level){
+  this.wrap = parent.appendChild(elt("div" , "game"));
+  this.level = level;
+
+  this.wrap.appendChild(this.drawBackground());
+  console.log(this.wrap);
+  this.actorLayer = null;
+  this.drawFrame();
+}
+
+var scale = 20;
+
+DOMDisplay.prototype.drawBackground = function(){
+  var table = elt("table" , "background");
+  table.style.width = this.level.width * scale + "px";
+
+  for(var i=0 ; i<this.level.height ; i++){
+    var row = table.appendChild(elt("tr"));
+    row.style.height = scale + "px";
+    for (var j = 0; j < this.level.width; j++) {
+      var data = row.appendChild(elt("td", this.level.grid[i][j]));
+    }
+  }
+  return table;
+};
+
+DOMDisplay.prototype.drawActors = function(){
+  var wrap = elt("div");
+  this.level.actors.forEach(function(actor){
+    var rect = wrap.appendChild(elt("div" ,"actor " +  actor.type));
+    rect.style.width = actor.size.x * scale + "px";
+    rect.style.height = actor.size.y * scale + "px";
+    rect.style.left = actor.pos.x * scale + "px";
+    rect.style.top = actor.pos.y * scale + "px";
+  });
+  return wrap;
+};
+
+DOMDisplay.prototype.drawFrame = function(){
+  if(this.actorLayer)
+    this.wrap.removeChild(actorLayer);
+  this.actorLayer = this.wrap.appendChild(this.drawActors());
+  this.wrap.className = "game " + (this.level.status || "");
+};
+
+DOMDisplay.prototype.clear = function(){
+  this.wrap.parentNode.removeChild(this.wrap);
+};
+
+var simpleLevel = new Level(simpleLevelPlan);
+var display = new DOMDisplay(document.body, simpleLevel);
