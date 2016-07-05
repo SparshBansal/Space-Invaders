@@ -1,4 +1,4 @@
-gitvar simpleLevelPlan = [
+var simpleLevelPlan = [
   "x                            x",
   "x                            x",
   "x                            x",
@@ -80,7 +80,7 @@ function Level(plan){
 
   // Constant parameters for bullet and asteroid delay
   this.bulletDelay = 0.2;
-  this.asteroidDelay = 0.3;
+  this.asteroidDelay = 2.0;
 }
 
 Level.prototype.isFinished = function(){
@@ -121,8 +121,8 @@ Asteroid.prototype.type = "asteroid";
 // Constructor for Bullets
 function Bullet(position){
   this.size = new Vector(0.4,0.4);
-  this.pos = position.plus(0.3,0.3);
-  this.speed = new Vector(0,-6);
+  this.pos = position.plus(new Vector(0.3,0.3));
+  this.speed = new Vector(0,-10);
 }
 
 Bullet.prototype.type = "bullet";
@@ -140,7 +140,6 @@ function DOMDisplay(parent , level){
   this.level = level;
 
   this.wrap.appendChild(this.drawBackground());
-  console.log(this.wrap);
   this.actorLayer = null;
   this.drawFrame();
 }
@@ -175,7 +174,7 @@ DOMDisplay.prototype.drawActors = function(){
 
 DOMDisplay.prototype.drawFrame = function(){
   if(this.actorLayer)
-    this.wrap.removeChild(actorLayer);
+    this.wrap.removeChild(this.actorLayer);
   this.actorLayer = this.wrap.appendChild(this.drawActors());
   this.wrap.className = "game " + (this.level.status || "");
 };
@@ -190,6 +189,9 @@ Level.prototype.obstacleAt = function(pos , size){
   var minY = Math.floor(pos.y);
   var maxY = Math.ceil(pos.y + size.y);
 
+  if(minY < 0)
+    return;
+
   for(var i = minY ; i < maxY; i++){
     for(var j = minX ; j < maxX; j++){
       if(this.grid[i][j])
@@ -199,20 +201,16 @@ Level.prototype.obstacleAt = function(pos , size){
   return null;
 }
 
-Level.prototype.actorAt = function(actor){
-  for(var i=0 ; i<this.actors.length ; i++){
-    var other = actors[i];
-    if(actor! = other){
-      if(actor.pos.x + actor.size.x < other.pos.x ||
-        actor.pos.x < other.pos.x + other.size.x ||
-        actor.pos.y + actor.size.y < other.pos.y ||
-        actor.pos.y < other.pos.y + other.size.y){
-
-        }
-        else
-        return other;
-      }
-  });
+Level.prototype.actorAt = function(actor) {
+  for (var i = 0; i < this.actors.length; i++) {
+    var other = this.actors[i];
+    if (other != actor &&
+        actor.pos.x + actor.size.x > other.pos.x &&
+        actor.pos.x < other.pos.x + other.size.x &&
+        actor.pos.y + actor.size.y > other.pos.y &&
+        actor.pos.y < other.pos.y + other.size.y)
+      return other;
+  }
 };
 
 var maxStep = 0.05;
@@ -223,10 +221,10 @@ var type = {
 };
 
 Level.prototype.createAsteroid = function(){
-  var max = this.width - 1;
+  var max = this.width - 2;
   var min = 2;
   var asteroidIndex = Math.floor(Math.random() * (max - min + 1)) + min;
-  var asteroidType = type[Math.floor(Math.random() * (2)) + 0;]
+  var asteroidType = type[Math.floor(Math.random() * (2)) + 0];
   var newAsteroid = new Asteroid(new Vector(asteroidIndex , -1) , asteroidType);
   this.actors.push(newAsteroid);
 }
@@ -239,7 +237,7 @@ Level.prototype.animate = function(step , keys){
     // If asteroid delay < 0 , then create a new asteroid
     if(this.asteroidDelay < 0){
       this.createAsteroid();
-      this.asteroidDelay = 0.3;
+      this.asteroidDelay = 2.0;
     }else
       this.asteroidDelay -= step;
 
@@ -271,7 +269,7 @@ Bullet.prototype.act = function(step , level){
     console.log("Don't know how the f**k this happened");
   }
   this.pos = newPosition;
-  var collisionActor = actorAt(this);
+  var collisionActor = level.actorAt(this);
   if(collisionActor){
     level.handleBulletCollision(this , collisionActor);
   }
@@ -288,9 +286,8 @@ Level.prototype.handleBulletCollision = function(bullet , actor){
       });
     }
   }else{
-    console.log("Now how did this happen");
+    console.log("how did this happen");
   }
-
   // Remove the bullet from actors
   this.actors = this.actors.filter(function(other){
     return bullet != other;
@@ -304,17 +301,19 @@ var playerSpeed = 7;
 Player.prototype.moveX = function(step , level , keys){
   this.speed.x = 0;
 
-  if(keys.left)
+  if(keys.left){
     this.speed.x = -playerSpeed;
-  if(keys.right)
+  }
+  if(keys.right){
     this.speed.x = playerSpeed;
-
+  }
   var speedX = new Vector(this.speed.x , 0);
   var motion = speedX.times(step);
   var newPosition = this.pos.plus(motion);
 
-  if(!level.obstacleAt(newPosition , this.size))
-    this.position = newPosition;
+  if(!level.obstacleAt(newPosition , this.size)){
+    this.pos = newPosition;
+  }
   else{
     // We have hit the wall , don't do anything
   }
@@ -333,7 +332,9 @@ Player.prototype.moveY = function(step , level , keys){
   var motion = speedY.times(step);
   var newPosition = this.pos.plus(motion);
 
-  if(!level.obstacleAt(newPosition , this.size))
+  if(!level.obstacleAt(newPosition , this.size)){
+    this.pos = newPosition;
+  }
   else{
     // We have hit a wall , don't do anything
   }
@@ -353,7 +354,7 @@ Player.prototype.act = function(step , level , keys){
   var collisionActor = level.actorAt(this);
   if(collisionActor){
     if(collisionActor.type == "asteroid"){
-      this.status = "lost";
+      level.status = "lost";
       this.finishDelay = 1;
     }else{
       // do nothing
@@ -370,11 +371,11 @@ Player.prototype.act = function(step , level , keys){
   if(keys.space){
     if(level.bulletDelay <= 0){
       // fire the bullet
-      var pos = this.pos.plus(0 , -1);
+      var pos = this.pos.plus(new Vector(0 , -1));
       level.createBullet(pos);
-      this.bulletDelay = 0.2;
+      level.bulletDelay = 0.2;
     }else{
-      this.bulletDelay -= step;
+      level.bulletDelay -= step;
     }
   }
 };
@@ -401,5 +402,37 @@ var trackKeys = function(codes){
   addEventListener("keyup" , keypressHandler);
   return pressed;
 }
-
 var keys = trackKeys(arrowCodes);
+
+// Run the animation framework
+function runAnimation(frameFunc){
+  var lastTime = null;
+  function frame(time){
+    var stop = false;
+    if(lastTime!=null){
+      var timestep = Math.min(time - lastTime , 100)/1000;
+      stop = frameFunc(timestep) === false;
+    }
+    lastTime = time
+    if(!stop)
+      requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function runLevel (level , Display){
+  var display = new Display(document.body , level);
+  runAnimation(function(timestep){
+    level.animate(timestep , keys);
+    display.drawFrame(timestep);
+    if(level.isFinished()){
+      display.clear();
+      return false;
+    }
+  });
+}
+
+function runGame(Display) {
+  runLevel(new Level(simpleLevelPlan), Display);
+}
+runGame(DOMDisplay);

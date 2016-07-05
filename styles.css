@@ -24,11 +24,11 @@
 }
 
 .asteroid {
-  background: rgb();
+  background: rgb(146 , 135 , 121);
 }
 
 .bullet {
-  background: rgb(255, 0, 0);
+  background: rgb(255,255,0);
 }
 
 .game {
