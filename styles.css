@@ -23,6 +23,14 @@
   box-shadow: -4px -7px 8px white, 4px -7px 8px white;
 }
 
+.asteroid {
+  background: rgb();
+}
+
+.bullet {
+  background: rgb(255, 0, 0);
+}
+
 .game {
   overflow: hidden;
   max-width: 600px;

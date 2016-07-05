@@ -23,7 +23,6 @@ gitvar simpleLevelPlan = [
 ];
 
 /* TODO
--- Listen to keypress events
 -- Put animation framework in place
 */
 
@@ -379,3 +378,28 @@ Player.prototype.act = function(step , level , keys){
     }
   }
 };
+
+// Add keypress event listeners
+var arrowCodes = {
+  37 : "left",
+  38 : "up",
+  39 : "right",
+  40 : "down",
+  32 : "space"
+};
+
+var trackKeys = function(codes){
+  var pressed = Object.create(null);
+  var keypressHandler = function(event){
+    if(codes.hasOwnProperty(event.keyCode)){
+      var down = event.type == "keydown";
+      pressed[codes[event.keyCode]] = down;
+      event.preventDefault();
+    }
+  }
+  addEventListener("keydown" , keypressHandler);
+  addEventListener("keyup" , keypressHandler);
+  return pressed;
+}
+
+var keys = trackKeys(arrowCodes);
